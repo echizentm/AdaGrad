@@ -41,21 +41,24 @@ sub update {
     return unless (__is_valid_label($args{label}));
     return unless (__is_valid_data($args{data}));
 
-    return 1 if ($self->classify(%args, as_margin => 1) >= MARGIN);
+    return 1 if (($args{label} *
+                  $self->classify(%args, as_margin => 1)
+                 ) >= MARGIN);
 
     $self->{num_of_gradients}++;
     for my $feature (keys %{$args{data}}) {
+        next if ($args{data}{$feature} == 0.0);
         my $gradient = -1 * $args{label} * $args{data}{$feature};
         $self->{sum_of_gradients}{$feature}         += $gradient;
         $self->{sum_of_squared_gradients}{$feature} += $gradient * $gradient;
 
-        my $sign_of_gradients = ($self->{sum_of_gradients}{$feature} >= 0) ? 1 : -1;
+        my $sign_of_gradients = ($self->{sum_of_gradients}{$feature} >= 0.0) ? 1 : -1;
         my $mean_of_gradients = ($sign_of_gradients *
                                  $self->{sum_of_gradients}{$feature} /
                                  $self->{num_of_gradients}
                                 ) - $self->lambda;
 
-        if ($mean_of_gradients <= 0) {
+        if ($mean_of_gradients <= 0.0) {
             delete $self->{weight}{$feature};
         } else {
             $self->{weight}{$feature} = -1 *
